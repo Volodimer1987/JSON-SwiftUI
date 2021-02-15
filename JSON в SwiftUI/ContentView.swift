@@ -8,11 +8,70 @@
 import SwiftUI
 
 struct ContentView: View {
+    
+    @State var posts :[Post] = []
+    
     var body: some View {
-        Text("Hello, world!")
-            .padding()
+        NavigationView {
+            List(posts) { post in
+                VStack {
+                    Text(post.title)
+                        .fontWeight(.bold)
+                    Text(post.body)
+                }
+                
+            }.onAppear() {
+                Api().getPost { (posts) in
+                    self.posts = posts
+                }
+            }
+            .navigationBarTitle("Posts")
+        }
     }
 }
+
+struct Post: Codable,Identifiable {
+    var id = UUID()
+    var title:String
+    var body:String
+    
+    enum CodingKeys: String, CodingKey {
+            case title
+            case body
+    }
+}
+
+class Api {
+    func getPost(complition: @escaping ([Post]) -> ()) {
+        guard let url = URL(string: "https://jsonplaceholder.typicode.com/posts") else  {return}
+        
+        URLSession.shared.dataTask(with: url) {(data,_,_) in
+            
+            guard let data = data else {print("no good");return}
+            let posts = try!JSONDecoder().decode([Post].self, from: data)
+            DispatchQueue.main.async {
+                complition(posts)
+            }
+        }.resume()
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
